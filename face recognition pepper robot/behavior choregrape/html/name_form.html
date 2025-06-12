@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Masukkan Nama</title>
+</head>
+
+<body>
+  <h1>Siapa namamu?</h1>
+  <input type="text" id="nameInput" placeholder="Nama Anda">
+  <button onclick="sendName()">Submit</button>
+
+  <script type="text/javascript">
+    function sendName() {
+      var name = document.getElementById("nameInput").value;
+      ALMemory.raiseEvent("name_from_html", name);
+    }
+  </script>
+</body>
+</html>

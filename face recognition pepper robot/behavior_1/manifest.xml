@@ -1,0 +1,41 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<package version="0.0.0" uuid="arproject_groupb-0e4919">
+ <names>
+  <name lang="en_US">ARProject_GroupB</name>
+ </names>
+ <descriptions>
+  <description lang="en_US">We are the world, we are the children.</description>
+  <description lang="es_ES">We are the world</description>
+ </descriptions>
+ <supportedLanguages>
+  <language>en_US</language>
+ </supportedLanguages>
+ <descriptionLanguages>
+  <language>en_US</language>
+ </descriptionLanguages>
+ <contents>
+  <behaviorContent path="SpeechCommands">
+   <userRequestable/>
+   <nature>interactive</nature>
+   <permissions/>
+  </behaviorContent>
+  <behaviorContent path="Faces">
+   <nature>interactive</nature>
+   <permissions/>
+  </behaviorContent>
+  <behaviorContent path="FollowCome">
+   <nature>interactive</nature>
+   <permissions/>
+  </behaviorContent>
+  <behaviorContent path="Dialogue">
+   <nature>interactive</nature>
+   <permissions/>
+  </behaviorContent>
+  <dialogContent typeVersion="1.0" topicName="Dialogue_Sun">
+   <topic language="en_US" path="Dialogue_Sun/Dialogue_Sun_enu.top"/>
+  </dialogContent>
+ </contents>
+ <requirements>
+  <robotRequirement model="JULIETTE"/>
+ </requirements>
+</package>
