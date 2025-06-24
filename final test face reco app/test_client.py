@@ -74,7 +74,7 @@ if __name__ == '__main__':
     
     # Contoh 1: Mengenali wajah yang sudah ada di database (misal: ronaldo.jpg)
     # Pastikan file ini ada setelah sinkronisasi GCS
-    image_to_recognize = r'D:\Portofolio Git\Hida-Machine-Learning\face recognition app\database\messi.jpg'
+    image_to_recognize = r'D:\Portofolio Git\Hida-Machine-Learning\face recognition app\database\rahmat.jpg'
     if os.path.exists(image_to_recognize):
         test_recognize(image_to_recognize)
     else:

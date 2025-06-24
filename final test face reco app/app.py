@@ -16,7 +16,7 @@ app = Flask(__name__)
 MODEL_NAME = "VGG-Face"
 DISTANCE_METRIC = "cosine"
 # Atur ambang batas jarak berdasarkan Tabel 2
-DISTANCE_THRESHOLD = 0.40 
+DISTANCE_THRESHOLD = 0.6
 # Direktori sementara untuk menyimpan file yang diunggah
 UPLOAD_FOLDER = 'temp_uploads'
 if not os.path.exists(UPLOAD_FOLDER):
@@ -30,6 +30,9 @@ def recognize_face():
     """
     Endpoint untuk mengenali wajah dari gambar yang diunggah.
     """
+    # Lakukan sinkronisasi cerdas di setiap request untuk memastikan database selalu terbaru
+    synchronize_gcs_to_local()
+
     # Periksa apakah ada file gambar dalam permintaan
     if 'image' not in request.files:
         return jsonify({"status": "error", "message": "Tidak ada file gambar dalam permintaan"}), 400
@@ -163,7 +166,10 @@ def register_face():
 
 
 if __name__ == '__main__':
-    # Lakukan sinkronisasi GCS saat aplikasi pertama kali dimulai
-    synchronize_gcs_to_local()
+    # Saat startup, cukup pastikan folder database lokal ada.
+    # Sinkronisasi penuh akan dijalankan oleh request pertama.
+    if not os.path.exists(LOCAL_DB_PATH):
+        os.makedirs(LOCAL_DB_PATH)
+    
     # Jalankan aplikasi Flask
     app.run(host='0.0.0.0', port=8000, debug=True)

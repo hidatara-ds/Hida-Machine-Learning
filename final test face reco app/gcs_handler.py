@@ -12,57 +12,84 @@ LOCAL_DB_PATH = "gcs_database"
 
 def synchronize_gcs_to_local():
     """
-    Mengunduh seluruh isi bucket GCS ke direktori lokal.
-    Fungsi ini mereplikasi struktur folder dari GCS.
-    Ini harus dipanggil saat aplikasi dimulai.
+    Melakukan sinkronisasi cerdas antara GCS dan direktori lokal.
+    - Mengunduh file baru dari GCS.
+    - Menghapus file lokal yang tidak ada lagi di GCS.
+    - Menghapus cache DeepFace (.pkl) hanya jika ada perubahan.
     """
-    print(f"Memulai sinkronisasi dari GCS bucket: {GCS_BUCKET_NAME} ke direktori lokal: {LOCAL_DB_PATH}")
-    
-    # Inisialisasi klien GCS
+    print("Memulai sinkronisasi cerdas...")
     try:
         storage_client = storage.Client()
         bucket = storage_client.bucket(GCS_BUCKET_NAME)
     except Exception as e:
-        print(f"Error: Gagal menginisialisasi klien GCS atau mengakses bucket. Pastikan kredensial sudah diatur. Detail: {e}")
+        print(f"Error: Gagal menginisialisasi klien GCS. Detail: {e}")
         return
 
-    # Periksa apakah direktori lokal sudah ada dan berisi file. Jika ya, lewati sinkronisasi.
-    if os.path.exists(LOCAL_DB_PATH) and len(os.listdir(LOCAL_DB_PATH)) > 0:
-        print("Direktori lokal sudah ada dan tidak kosong. Melewati sinkronisasi.")
-        # Hapus file cache representasi jika ada untuk memaksa DeepFace membangunnya kembali
-        # Ini penting jika ada perubahan di GCS sejak terakhir kali dijalankan.
-        pkl_file = os.path.join(LOCAL_DB_PATH, "representations_vgg_face.pkl")
-        if os.path.exists(pkl_file):
-            print("Menghapus file cache representasi lama...")
-            os.remove(pkl_file)
-        return
+    # 1. Dapatkan daftar file (path relatif) dari GCS
+    gcs_files = {blob.name for blob in bucket.list_blobs()}
 
-    print("Direktori lokal kosong. Memulai pengunduhan dari GCS...")
-    
-    # Buat direktori lokal jika belum ada
+    # 2. Dapatkan daftar file (path relatif) dari direktori lokal
     if not os.path.exists(LOCAL_DB_PATH):
         os.makedirs(LOCAL_DB_PATH)
+    
+    local_files = set()
+    for root, _, files in os.walk(LOCAL_DB_PATH):
+        for name in files:
+            if name.endswith(".pkl"):  # Abaikan file cache DeepFace
+                continue
+            local_path = os.path.join(root, name)
+            # Buat path relatif untuk perbandingan, pastikan separatornya '/'
+            relative_path = os.path.relpath(local_path, LOCAL_DB_PATH).replace('\\', '/')
+            local_files.add(relative_path)
 
-    blobs = bucket.list_blobs()
-    download_count = 0
-    for blob in blobs:
-        # Buat jalur file lokal yang sesuai dengan struktur di GCS
-        destination_file_path = os.path.join(LOCAL_DB_PATH, blob.name)
-        
-        # Buat direktori induk jika belum ada
-        destination_dir = os.path.dirname(destination_file_path)
-        if not os.path.exists(destination_dir):
-            os.makedirs(destination_dir)
+    # 3. Tentukan file yang akan diunduh dan dihapus
+    files_to_download = gcs_files - local_files
+    files_to_delete = local_files - gcs_files
+
+    db_changed = False
+
+    # 4. Unduh file-file baru
+    if files_to_download:
+        db_changed = True
+        print(f"Ditemukan {len(files_to_download)} file baru untuk diunduh.")
+        for file_path in files_to_download:
+            # Lewati "objek" folder yang ditandai dengan '/' di akhir nama
+            if file_path.endswith('/'):
+                print(f"Melewati objek folder: {file_path}")
+                continue
+                
+            blob = bucket.blob(file_path)
+            # Ganti separator agar sesuai dengan sistem operasi lokal
+            destination_file_path = os.path.join(LOCAL_DB_PATH, file_path.replace('/', os.sep))
             
-        # Unduh blob ke file lokal
-        try:
-            print(f"Mengunduh {blob.name} ke {destination_file_path}...")
+            # Buat direktori jika belum ada
+            destination_dir = os.path.dirname(destination_file_path)
+            if not os.path.exists(destination_dir):
+                os.makedirs(destination_dir)
+            
+            print(f"Mengunduh {file_path}...")
             blob.download_to_filename(destination_file_path)
-            download_count += 1
-        except Exception as e:
-            print(f"Error: Gagal mengunduh file {blob.name}. Detail: {e}")
 
-    print(f"Sinkronisasi selesai. Total {download_count} file diunduh.")
+    # 5. Hapus file-file lama
+    if files_to_delete:
+        db_changed = True
+        print(f"Ditemukan {len(files_to_delete)} file lama untuk dihapus.")
+        for file_path in files_to_delete:
+            local_file_to_delete = os.path.join(LOCAL_DB_PATH, file_path.replace('/', os.sep))
+            if os.path.exists(local_file_to_delete):
+                print(f"Menghapus {local_file_to_delete}...")
+                os.remove(local_file_to_delete)
+
+    # 6. Hapus file cache .pkl jika database berubah
+    if db_changed:
+        print("Database berubah. Menghapus file cache representasi DeepFace.")
+        pkl_file = os.path.join(LOCAL_DB_PATH, "representations_vgg_face.pkl")
+        if os.path.exists(pkl_file):
+            os.remove(pkl_file)
+    else:
+        print("Database lokal sudah sinkron dengan GCS.")
+    
+    print("Sinkronisasi cerdas selesai.")
 
 
 def upload_face_to_gcs(image_path, person_name):
