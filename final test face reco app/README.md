@@ -1,110 +1,114 @@
 # Aplikasi API Pengenalan Wajah dengan Flask dan Google Cloud Storage
 
-Aplikasi ini adalah sebuah API berbasis Flask yang menyediakan layanan untuk mengenali dan mendaftarkan wajah. Aplikasi ini menggunakan `deepface` untuk analisis wajah dan Google Cloud Storage (GCS) sebagai database untuk menyimpan gambar wajah.
+Aplikasi ini adalah API berbasis Flask untuk mengenali dan mendaftarkan wajah, menggunakan DeepFace dan Google Cloud Storage (GCS) sebagai database gambar wajah.
 
 ## Fitur
-
--   **Sinkronisasi Otomatis:** Secara otomatis mengunduh database wajah dari GCS saat pertama kali dijalankan.
--   **Endpoint `/recognize`**: Menerima file gambar dan mengembalikan nama orang yang paling cocok dari database, beserta `distance` dan `confidence score`.
--   **Endpoint `/register`**: Menerima nama dan file gambar (base64) untuk mendaftarkan wajah baru ke dalam database GCS.
+- Sinkronisasi otomatis database wajah dari GCS
+- Endpoint `/recognize` untuk mengenali wajah
+- Endpoint `/register` untuk mendaftarkan wajah baru
+- Dukungan client Python (bisa diintegrasikan ke robot Pepper)
 
 ---
 
 ## Prasyarat
-
-Sebelum memulai, pastikan kamu sudah memiliki:
-1.  **Python 3.10**. Versi ini penting untuk kompatibilitas dengan `tensorflow==2.11.0`.
-2.  Akun Google Cloud Platform (GCP) dengan sebuah **Bucket GCS** yang sudah dibuat.
-
----
-
-## Panduan Instalasi dan Setup
-
-Ikuti langkah-langkah berikut untuk menjalankan aplikasi di komputermu.
-
-### 1. Clone Repository (jika belum)
-```bash
-git clone <URL_REPOSITORY_ANDA>
-cd <NAMA_FOLDER_REPOSITORY>/final test face reco app
-```
-
-### 2. Konfigurasi Google Cloud
--   **Buat Service Account** di GCP dan unduh file kredensialnya.
--   **Ubah nama file** kredensial yang diunduh menjadi `key.json`.
--   **Letakkan `key.json`** di dalam folder `final test face reco app/`, sejajar dengan `app.py`.
-
-### 3. Atur Nama Bucket GCS
--   Buka file `gcs_handler.py`.
--   Ubah nilai variabel `GCS_BUCKET_NAME` dengan nama bucket GCS yang sudah kamu siapkan.
-    ```python
-    # gcs_handler.py
-    GCS_BUCKET_NAME = "nama-bucket-kamu" 
-    ```
-
-### 4. Buat dan Aktifkan Virtual Environment
--   Buka terminal di dalam folder `final test face reco app`.
--   Gunakan **Python 3.10** untuk membuat virtual environment:
-    ```bash
-    # Untuk Windows (jika punya Python Launcher)
-    py -3.10 -m venv venv
-
-    # Untuk Linux/macOS atau jika 'python3.10' ada di PATH
-    python3.10 -m venv venv
-    ```
--   Aktifkan virtual environment:
-    ```bash
-    # Windows (PowerShell)
-    .\venv\Scripts\Activate
-
-    # Linux/macOS
-    source venv/bin/activate
-    ```
-    Kamu akan melihat `(venv)` di awal baris terminalmu.
-
-### 5. Install Semua Dependencies
--   Pastikan file `requirements.txt` sudah ada.
--   Jalankan perintah berikut untuk meng-install semua package yang dibutuhkan:
-    ```bash
-    pip install --upgrade pip
-    pip install -r requirements.txt
-    ```
+- **Python 3.10**
+- **Google Cloud Service Account** dan file credential (lihat di bawah)
+- **Bucket GCS** untuk database gambar wajah
 
 ---
 
-## Cara Menjalankan Aplikasi
+## Setup Aman untuk Public Repo
 
-### Langkah 1: Jalankan Server API
--   Di terminal yang sama (dengan `venv` aktif), jalankan server Flask:
-    ```bash
-    python app.py
-    ```
--   Server akan mulai berjalan dan melakukan sinkronisasi dengan GCS. Biarkan terminal ini tetap terbuka.
+### 1. **JANGAN upload file `key.json` ke repo!**
+- File `key.json` sudah ada di `.gitignore`.
+- Hanya upload `key.json.example` (isi dummy, bukan credential asli).
 
-### Langkah 2: Jalankan Client untuk Tes
--   Buka **terminal baru**.
--   Masuk ke direktori `final test face reco app` dan **aktifkan venv** yang sama seperti di langkah sebelumnya.
-    ```bash
-    # Windows (PowerShell)
-    cd "path/to/final test face reco app"
-    .\venv\Scripts\Activate
-    ```
--   Jalankan script `test_client.py` untuk mengirim request ke server:
-    ```bash
-    python test_client.py
-    ```
--   Kamu akan melihat output sapaan di terminal client, dan log request di terminal server.
+### 2. **Semua variabel sensitif diatur lewat environment variable**
+- Nama bucket, path credential, dan BASE_URL **tidak di-hardcode** di kode.
+- Semua script Python mengambil variabel berikut dari environment:
+  - `GCS_BUCKET_NAME` (nama bucket GCS)
+  - `GOOGLE_APPLICATION_CREDENTIALS` (path ke file credential, default: `key.json`)
+  - `BASE_URL` (alamat server API, default: `http://localhost:8000`)
 
-**Untuk Mengetes Gambar Lain:**
--   Buka file `test_client.py`.
--   Ubah path gambar di variabel `image_to_recognize`.
--   Simpan file dan jalankan ulang `python test_client.py`.
+### 3. **Contoh file credential**
+- File `key.json.example` sudah tersedia. Copy ke `key.json` dan isi dengan credential asli milikmu.
 
 ---
+
+## Cara Setup (Local Development)
+
+1. **Clone repo dan masuk ke folder project**
+2. **Copy file credential**
+   ```sh
+   cp key.json.example key.json
+   # Lalu edit dan isi dengan credential asli
+   ```
+3. **Set environment variable** (Linux/macOS)
+   ```sh
+   export GCS_BUCKET_NAME=your-bucket-name
+   export GOOGLE_APPLICATION_CREDENTIALS=key.json
+   export BASE_URL=http://localhost:8000
+   ```
+   (Windows: gunakan `set` atau `.env` sesuai shell yang dipakai)
+4. **Buat dan aktifkan virtual environment**
+   ```sh
+   python3.10 -m venv venv
+   source venv/bin/activate
+   pip install --upgrade pip
+   pip install -r requirements.txt
+   ```
+5. **Jalankan server**
+   ```sh
+   python app.py
+   # atau untuk production:
+   gunicorn --bind 127.0.0.1:8000 app:app
+   ```
+6. **Jalankan client/test**
+   - Edit `BASE_URL` di environment variable jika perlu.
+   - Jalankan `test_client.py` atau integrasikan ke robot Pepper dengan `pepper_client.py`.
+
+---
+
+## Cara Deploy ke Compute Engine (Cloud)
+
+1. **Copy project ke VM** (pakai git, scp, atau upload manual)
+2. **Install Python, pip, venv di VM**
+3. **Copy file credential ke VM** (jangan upload ke repo!)
+4. **Set environment variable di shell VM**
+   ```sh
+   export GCS_BUCKET_NAME=your-bucket-name
+   export GOOGLE_APPLICATION_CREDENTIALS=key.json
+   export BASE_URL=http://<IP_VM>:8000
+   ```
+5. **Install requirements dan jalankan Gunicorn**
+   ```sh
+   python3.10 -m venv venv
+   source venv/bin/activate
+   pip install --upgrade pip
+   pip install -r requirements.txt
+   gunicorn --bind 127.0.0.1:8000 app:app
+   ```
+6. **Setup Nginx sebagai reverse proxy ke 127.0.0.1:8000**
+7. **Akses API dari luar via Nginx (port 80)**
+
+---
+
 ## Struktur File Penting
--   `app.py`: Logika utama server Flask dan endpoint API.
--   `gcs_handler.py`: Fungsi untuk sinkronisasi dan upload ke Google Cloud Storage.
--   `test_client.py`: Script untuk mengetes endpoint API.
--   `requirements.txt`: Daftar semua package Python yang dibutuhkan.
--   `key.json`: File kredensial rahasia untuk mengakses GCP (JANGAN DI-UPLOAD KE GIT).
--   `gcs_database/`: Folder lokal tempat database wajah dari GCS disimpan.
--   `temp_uploads/`: Folder sementara untuk gambar yang di-upload saat proses pengenalan. 
+- `app.py` : Server Flask utama
+- `gcs_handler.py` : Sinkronisasi dan upload ke GCS
+- `test_client.py` : Client Python untuk testing
+- `pepper_client.py` : Client untuk integrasi dengan robot Pepper
+- `requirements.txt` : Daftar dependencies
+- `key.json.example` : Contoh credential (isi dummy)
+- `.gitignore` : Sudah mengabaikan file rahasia
+
+---
+
+## Catatan Keamanan
+- **JANGAN pernah upload file credential asli ke repo public!**
+- **Selalu gunakan environment variable untuk data sensitif.**
+- **Update README jika ada variabel baru atau perubahan setup.**
+
+---
+
+Untuk pertanyaan lebih lanjut, silakan buka issue di repo ini atau hubungi maintainer. 

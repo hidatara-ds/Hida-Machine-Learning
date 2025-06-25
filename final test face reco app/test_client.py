@@ -2,8 +2,7 @@ import requests
 import base64
 import os
 
-# URL tempat aplikasi Flask berjalan
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = os.environ.get("BASE_URL", "http://localhost:8000")
 
 def test_recognize(image_path):
     """
@@ -74,7 +73,7 @@ if __name__ == '__main__':
     
     # Contoh 1: Mengenali wajah yang sudah ada di database (misal: ronaldo.jpg)
     # Pastikan file ini ada setelah sinkronisasi GCS
-    image_to_recognize = r'D:\Portofolio Git\Hida-Machine-Learning\face recognition app\database\rahmat.jpg'
+    image_to_recognize = r'your path image'
     if os.path.exists(image_to_recognize):
         test_recognize(image_to_recognize)
     else:

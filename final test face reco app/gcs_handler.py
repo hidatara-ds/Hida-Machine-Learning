@@ -1,12 +1,14 @@
 # gcs_handler.py
 import os
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.path.join(os.path.dirname(__file__), "key.json")
+
+GCS_BUCKET_NAME = os.environ.get("GCS_BUCKET_NAME", "your-bucket-name")
+GOOGLE_APPLICATION_CREDENTIALS = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "key.json")
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = GOOGLE_APPLICATION_CREDENTIALS
 from google.cloud import storage
 from google.api_core.exceptions import NotFound
 
 # Konfigurasi GCS
 # Ganti dengan nama bucket GCS Anda
-GCS_BUCKET_NAME = "face-recognition-db" 
 # Direktori lokal untuk menyimpan database wajah yang disinkronkan
 LOCAL_DB_PATH = "gcs_database" 
 

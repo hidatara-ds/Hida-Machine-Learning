@@ -7,7 +7,7 @@ from deepface import DeepFace
 import pandas as pd
 from gcs_handler import synchronize_gcs_to_local, upload_face_to_gcs, LOCAL_DB_PATH
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.path.join(os.path.dirname(__file__), "key.json")
+# Tidak perlu set credential di sini, sudah diatur di gcs_handler.py
 
 app = Flask(__name__)
 
